@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>39834472587-6nrrus1lemldddlo1v9o27a9qvglvhtk.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.39834472587-6nrrus1lemldddlo1v9o27a9qvglvhtk</string>
+	<key>API_KEY</key>
+	<string>AIzaSyABaKkcEWwaQ2Rlqb9Q1k2j9rgDaa7vW18</string>
+	<key>GCM_SENDER_ID</key>
+	<string>39834472587</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.propmapped.propmapped</string>
+	<key>PROJECT_ID</key>
+	<string>propmapped-a3c23</string>
+	<key>STORAGE_BUCKET</key>
+	<string>propmapped-a3c23.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:39834472587:ios:19636d396f6db96343048e</string>
+	<key>DATABASE_URL</key>
+	<string>https://propmapped-a3c23.firebaseio.com</string>
+</dict>
+</plist>

@@ -1,0 +1,6 @@
+framework module Pods_FirebaseUI_FirebaseFacebookAuthUI {
+  umbrella header "Pods-FirebaseUI-FirebaseFacebookAuthUI-umbrella.h"
+
+  export *
+  module * { export * }
+}
