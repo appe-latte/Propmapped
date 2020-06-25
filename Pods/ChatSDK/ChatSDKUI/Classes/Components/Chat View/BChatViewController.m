@@ -175,6 +175,12 @@
     
 }
 
+-(void) setupTextInputView: (BOOL) forceSuper {
+    if (!_thread.isReadOnly || forceSuper) {
+        [super setupTextInputView: forceSuper];
+    }
+}
+
 -(void) addUserToPublicThreadIfNecessary {
     // For public threads we add the user when we view the thread
     // TODO: This is called multiple times... maybe move it to view did load
@@ -186,7 +192,10 @@
 
 -(void) viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    
+    [self doViewWillDisappear:animated];
+}
+
+-(void) doViewWillDisappear: (BOOL) animated {
     // Remove the user from the thread
     if (_thread.type.intValue & bThreadFilterPublic && (!BChatSDK.config.publicChatAutoSubscriptionEnabled || [_thread.meta valueForKey:bMute]) && !_usersViewLoaded) {
         id<PUser> currentUser = BChatSDK.currentUser;

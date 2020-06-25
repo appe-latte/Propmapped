@@ -19,7 +19,9 @@
     [BHookNotification notificationUserOn:user];
     
     [self threadsOn:user];
-    [self publicThreadsOn:user];
+    if (!BChatSDK.config.disablePublicThreads) {
+        [self publicThreadsOn:user];
+    }
     [self contactsOn:user];
     [self moderationOn: user];
     [self onlineOn];
@@ -57,7 +59,6 @@
             [thread messagesOn];
             [thread usersOn];
             [thread lastMessageOn];
-            [thread metaOn];
         }
     }];
     
@@ -69,7 +70,6 @@
             [thread off];
             [thread messagesOff]; // We need to turn the messages off incase we rejoin the thread
             [thread lastMessageOff];
-            [thread metaOff];
             
             [BChatSDK.core deleteThread:thread.model];
         }
@@ -81,9 +81,12 @@
 
     // TODO: This may cause issues if the device's clock is wrong
     FIRDatabaseQuery * query = [publicThreadsRef queryOrderedByChild:bCreationDate];
-    double loadRoomsSince = ([[NSDate date] timeIntervalSince1970] - BChatSDK.config.publicChatRoomLifetimeMinutes * 60) * 1000;
-    [query queryStartingAtValue: @(loadRoomsSince)];
     
+    if (BChatSDK.config.publicChatRoomLifetimeMinutes != 0) {
+            double loadRoomsSince = ([[NSDate date] timeIntervalSince1970] - BChatSDK.config.publicChatRoomLifetimeMinutes * 60) * 1000;
+            query = [query queryStartingAtValue: @(loadRoomsSince)];
+    }
+
     [query observeEventType:FIRDataEventTypeChildAdded withBlock:^(FIRDataSnapshot * snapshot) {
         if (snapshot.value != [NSNull null]) {
             // Make the new thread
@@ -102,7 +105,6 @@
             [thread messagesOn];
             [thread usersOn];
             [thread lastMessageOn];
-            [thread metaOn];
         }
     }];
 }
@@ -147,7 +149,11 @@
 -(void) currentUserOff: (NSString *) entityID {
     id<PUser> user = [BChatSDK.db fetchEntityWithID:entityID withType:bUserEntity];
     [self threadsOff:user];
-    [self publicThreadsOff:user];
+    
+    if (!BChatSDK.config.disablePublicThreads) {
+        [self publicThreadsOff:user];
+    }
+
     [self contactsOff:user];
     [self moderationOff:user];
     [self onlineOff];

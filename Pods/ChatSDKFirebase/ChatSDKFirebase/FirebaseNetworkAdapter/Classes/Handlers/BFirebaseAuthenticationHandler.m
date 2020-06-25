@@ -82,9 +82,9 @@
     RXPromise * promise = [RXPromise new];
     
     if (BChatSDK.config.remoteConfigEnabled) {
-        [[FIRDatabaseReference configRef] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot * snapshot) {
+        [[FIRDatabaseReference configRef] observeEventType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot * snapshot) {
             if (![snapshot.value isEqual: [NSNull null]]) {
-                [BChatSDK.config updateRemoteConfig:snapshot.value];
+                [BChatSDK.config setRemoteConfig:snapshot.value];
             }
             [promise resolveWithResult:Nil];
         }];
@@ -118,53 +118,6 @@
     // Depending on the login method we need to authenticate with Firebase
     switch (details.type)
     {
-        case bAccountTypeFacebook: {
-            if (BChatSDK.socialLogin) {
-                [BChatSDK.socialLogin loginWithFacebook].thenOnMain(^id(NSString * token) {
-                    FIRAuthCredential * credential = [FIRFacebookAuthProvider credentialWithAccessToken:token];
-                    //[promise resolveWithResult:credential];
-                    [[FIRAuth auth] signInWithCredential:credential completion:handleResult];
-
-                    return Nil;
-                }, ^id (NSError * error) {
-                    handleResult(Nil, error);
-                    return Nil;
-                });
-            }
-        }
-            break;
-        case bAccountTypeTwitter:
-        {
-            if (BChatSDK.socialLogin) {
-                [BChatSDK.socialLogin loginWithTwitter].thenOnMain(^id(NSArray * array) {
-                    FIRAuthCredential * credential = [FIRTwitterAuthProvider credentialWithToken:array.firstObject
-                                                                                          secret:array.lastObject];
-                    [[FIRAuth auth] signInWithCredential:credential completion:handleResult];
-                    return Nil;
-                    
-                }, ^id (NSError * error) {
-                    handleResult(Nil, error);
-                    return Nil;
-                });
-            }
-        }
-            break;
-        case bAccountTypeGoogle:
-        {
-            if (BChatSDK.socialLogin) {
-                [BChatSDK.socialLogin loginWithGoogle].thenOnMain(^id(NSArray * array) {
-                    FIRAuthCredential * credential = [FIRGoogleAuthProvider credentialWithIDToken:array.firstObject
-                                                                                      accessToken:array.lastObject];
-                    [[FIRAuth auth] signInWithCredential:credential completion:handleResult];
-                    return Nil;
-                    
-                }, ^id (NSError * error) {
-                    handleResult(Nil, error);
-                    return Nil;
-                });
-            }
-        }
-            break;
         case bAccountTypeUsername:
         {
             [[FIRAuth auth] signInWithEmail:details.username password:details.password completion:handleResult];
@@ -200,6 +153,18 @@
         return [RXPromise resolveWithResult:Nil];
     }
     
+    // Get the user
+    id<PUser> cachedUser = [BChatSDK.db fetchEntityWithID:firebaseUser.uid withType:bUserEntity];
+    
+    // What we do now depends on whether the user exists and whether we are in development mode
+    // If we are in development mode, we will always pull to check to see if the remote data
+    // has been cleared down. If we are in prod mode, if the local user exists we won't
+    // perform this check
+
+    if (cachedUser && (!BChatSDK.config.developmentModeEnabled || _isAuthenticatedThisSession)) {
+        return [self completeAuthentication:details withUser:cachedUser];
+    }
+    
     // Get the token
     RXPromise * tokenPromise = [RXPromise new];
     [firebaseUser getIDTokenWithCompletion:^(NSString * token, NSError * error) {
@@ -211,66 +176,62 @@
         }
     }];
     
-    __weak __typeof__(self) weakSelf = self;
     return tokenPromise.thenOnMain(^id(NSString * token) {
-        __typeof__(self) strongSelf = weakSelf;
 
-        NSString * uid = firebaseUser.uid;
-        
-        // Save the authentication ID for the current user
-        // Set the current user
-        [strongSelf setLoginInfo:@{bAuthenticationIDKey: uid,
-                             bTokenKey: [NSString safe: token]}];
-        
         CCUserWrapper * user = [CCUserWrapper userWithAuthUserData:firebaseUser];
         if (details.name && !user.model.name) {
             [user.model setName:details.name];
         }
         
-        if (!strongSelf->_isAuthenticatedThisSession) {
-            strongSelf->_isAuthenticatedThisSession = YES;
-            // Update the user from the remote server
-            return [user once].thenOnMain(^id(id<PUserWrapper> user_) {
-
-                // If the user was authenticated automatically
-                if (!details) {
-                    [BHookNotification notificationDidAuthenticate:user.model type:bHook_AuthenticationTypeCached];
-                }
-                else if (details.type == bAccountTypeRegister) {
-                    [BHookNotification notificationDidAuthenticate:user.model type:bHook_AuthenticationTypeSignUp];
-                }
-                else {
-                    [BHookNotification notificationDidAuthenticate:user.model type:bHook_AuthenticationTypeLogin];
-                }
-                
-                [BChatSDK.core save];
-                
-//                NSLog(@"User On: %@", user.entityID);
-                
-                // Add listeners here
-                [BChatSDK.event currentUserOn:user.entityID];
-                
-                [BChatSDK.core setUserOnline];
-                
-                [[NSNotificationCenter defaultCenter] postNotificationName:bNotificationAuthenticationComplete object:Nil];
-                
-                strongSelf->_authenticatedThisSession = true;
-                
+        // Update the user from the remote server
+        return [user dataOnce: token].thenOnMain(^id(NSDictionary * data) {
+            
+            if (data) {
+                [user deserialize:data];
+            } else if (!BChatSDK.config.disableProfileUpdateOnAuthentication) {
                 [user push];
-                
-                return [self retrieveRemoteConfig].thenOnMain(^id(id success) {
-                    return user.model;
-                }, Nil);
-                
-            }, Nil);
-        }
-        else {
-            [BHookNotification notificationDidAuthenticate:user.model type:bHook_AuthenticationTypeCached];
-            return user.model;
-        }
+            }
+
+            return [self completeAuthentication:details withUser:user.model];
+            
+        }, Nil);
         
     }, Nil);
     
+}
+
+-(RXPromise *) completeAuthentication: (BAccountDetails *) details withUser: (id<PUser>) user {
+    
+    _isAuthenticatedThisSession = YES;
+    
+    // Save the authentication ID for the current user
+    [self setLoginInfo:@{bAuthenticationIDKey: user.entityID}];
+    
+    // If the user was authenticated automatically
+    if (!details) {
+        [BHookNotification notificationDidAuthenticate:user type:bHook_AuthenticationTypeCached];
+    }
+    else if (details.type == bAccountTypeRegister) {
+        [BHookNotification notificationDidAuthenticate:user type:bHook_AuthenticationTypeSignUp];
+    }
+    else {
+        [BHookNotification notificationDidAuthenticate:user type:bHook_AuthenticationTypeLogin];
+    }
+    
+    [BChatSDK.core save];
+        
+    // Add listeners here
+    [BChatSDK.event currentUserOn:user.entityID];
+    
+    [BChatSDK.core setUserOnline];
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:bNotificationAuthenticationComplete object:Nil];
+    
+    _authenticatedThisSession = true;
+        
+    return [self retrieveRemoteConfig].thenOnMain(^id(id success) {
+        return user;
+    }, Nil);
 }
 
 -(RXPromise *) resetPasswordWithCredential: (NSString *) credential {

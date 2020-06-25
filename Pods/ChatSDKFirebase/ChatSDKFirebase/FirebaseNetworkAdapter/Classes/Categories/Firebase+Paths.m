@@ -13,7 +13,7 @@
 @implementation FIRDatabaseReference (Paths)
 
 +(FIRDatabaseReference *) firebaseRef {
-    return [[[FIRDatabase database] reference] c: BChatSDK.config.rootPath];
+    return [[[BFirebaseCoreHandler database] reference] c: BChatSDK.config.rootPath];
 }
 
 -(FIRDatabaseReference *) c: (NSString *) component {
@@ -50,10 +50,6 @@
 
 +(FIRDatabaseReference *) userOnlineRef: (NSString *) firebaseID {
     return [[self userRef: firebaseID] child:bOnlinePath];
-}
-
-+(FIRDatabaseReference *) onlineRef: (NSString *) firebaseID {
-    return [[[self firebaseRef] child:bOnlinePath] child:firebaseID];
 }
 
 #pragma Flag ref

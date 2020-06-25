@@ -1,4 +1,4 @@
-//
+ //
 //  BConfiguration.m
 //  AFNetworking
 //
@@ -19,9 +19,6 @@
 @synthesize defaultUserName = _defaultUserName;
 @synthesize showEmptyChats;
 @synthesize allowUsersToCreatePublicChats;
-@synthesize googleLoginEnabled;
-@synthesize twitterLoginEnabled;
-@synthesize facebookLoginEnabled;
 @synthesize anonymousLoginEnabled;
 @synthesize defaultServer;
 @synthesize shouldOpenChatWhenPushNotificationClicked;
@@ -44,10 +41,6 @@
 @synthesize enableMessageModerationTab;
 @synthesize showLocalNotifications;
 @synthesize onlySendPushToOfflineUsers;
-@synthesize twitterApiKey;
-@synthesize twitterSecret;
-@synthesize googleClientKey;
-@synthesize facebookAppId;
 @synthesize userChatInfoEnabled;
 @synthesize forgotPasswordEnabled;
 @synthesize termsAndConditionsEnabled;
@@ -60,7 +53,11 @@
 @synthesize messageDeletionListenerLimit;
 @synthesize readReceiptMaxAgeInSeconds;
 @synthesize searchIndexes;
+@synthesize showProfileViewOnTap;
 @synthesize showLocalNotificationsForPublicChats;
+@synthesize disablePresence;
+@synthesize disableProfileUpdateOnAuthentication;
+@synthesize developmentModeEnabled;
 
 @synthesize vibrateOnNewMessage;
 
@@ -97,6 +94,15 @@
 @synthesize remote;
 @synthesize remoteConfigEnabled;
 
+@synthesize firebaseApp;
+@synthesize firebaseStorageURL;
+@synthesize firebaseDatabaseURL;
+@synthesize firebaseFunctionsRegion;
+@synthesize enableWebCompatibility;
+@synthesize enableCompatibilityWithV4;
+
+@synthesize messageDeletionEnabled;
+
 -(instancetype) init {
     if((self = [super init])) {
         
@@ -107,15 +113,14 @@
         messageColorReply = bDefaultMessageColorReply;
         rootPath = @"default";
         appBadgeEnabled = YES;
-        defaultUserNamePrefix = @"ChatSDK";
+        
+        [self setDefaultUserNamePrefix:@"ChatSDK"];
+
         showEmptyChats = YES;
         allowUsersToCreatePublicChats = NO;
+                
+        defaultAvatarURL = [NSString stringWithFormat:@"http://flathash.com/%@.png", self.defaultUserName];
         
-        defaultAvatarURL = [@"http://flathash.com/%@.png" stringByAppendingFormat: @"%@", self.defaultUserName];
-        
-        facebookLoginEnabled = YES;
-        twitterLoginEnabled = YES;
-        googleLoginEnabled = YES;
         clientPushEnabled = NO;
         
         remote = [NSMutableDictionary new];
@@ -128,6 +133,7 @@
         
         shouldOpenChatWhenPushNotificationClicked = YES;
         onlySendPushToOfflineUsers = NO;
+        messageDeletionEnabled = YES;
                 
         loginUsernamePlaceholder = Nil;
         
@@ -162,15 +168,10 @@
         defaultBlankAvatar = [NSBundle imageNamed:bDefaultProfileImage bundle:bCoreBundleName];
         defaultGroupChatAvatar = [NSBundle imageNamed:bDefaultPublicGroupImage bundle:bCoreBundleName];
         
+        showProfileViewOnTap = YES;
+        
         rootPath = [BSettingsManager firebaseRootPath];
-        
-        twitterApiKey = [BSettingsManager twitterApiKey];
-        twitterSecret = [BSettingsManager twitterSecret];
-        
-        facebookAppId = [BSettingsManager facebookAppId];
-        
-        googleClientKey = [BSettingsManager googleClientKey];
-        
+                
         anonymousLoginEnabled = [BSettingsManager anonymousLoginEnabled];
         
         userChatInfoEnabled = YES;
@@ -219,6 +220,8 @@
         combineTimeWithNameLabel = NO;
         
         publicChatAutoSubscriptionEnabled = NO;
+        enableWebCompatibility = NO;
+        enableCompatibilityWithV4 = YES;
         
     }
     return self;
@@ -228,7 +231,8 @@
     return remote[key];
 }
 
--(void) updateRemoteConfig: (NSDictionary *) dict {
+-(void) setRemoteConfig: (NSDictionary *) dict {
+    [remote removeAllObjects];
     for (id key in dict.allKeys) {
         remote[key] = dict[key];
     }

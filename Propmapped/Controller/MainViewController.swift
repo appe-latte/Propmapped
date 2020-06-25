@@ -10,7 +10,7 @@
 import UIKit
 import MapKit
 import CoreLocation
-import Crashlytics
+// import Crashlytics
 import FirebaseAuth
 
 protocol ModalDelegate {

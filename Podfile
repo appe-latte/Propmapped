@@ -1,5 +1,5 @@
 # Uncomment the next line to define a global platform for your project
-platform :ios, '9.0'
+platform :ios, '13.0'
 
 target 'Propmapped' do
   # Comment the next line if you don't want to use dynamic frameworks
@@ -21,8 +21,8 @@ target 'Propmapped' do
   pod 'IQKeyboardManagerSwift'
   pod 'Firebase/Storage'
   pod 'SwiftRangeSlider'
-  pod 'Crashlytics'
-  pod 'Fabric'
+  # pod 'Crashlytics'
+  # pod 'Fabric'
   pod 'Firebase/Messaging'
   pod 'Alamofire'
   pod 'SwiftyJSON'
@@ -33,7 +33,7 @@ target 'Propmapped' do
   pod "ChatSDKFirebase/Adapter"
   pod "ChatSDKFirebase/FileStorage"
   pod "ChatSDKFirebase/Push"
-
+  
 end
 
 post_install do |installer|

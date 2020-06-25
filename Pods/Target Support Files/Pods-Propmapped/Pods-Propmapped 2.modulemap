@@ -1,0 +1,6 @@
+framework module Pods_Propmapped {
+  umbrella header "Pods-Propmapped-umbrella.h"
+
+  export *
+  module * { export * }
+}

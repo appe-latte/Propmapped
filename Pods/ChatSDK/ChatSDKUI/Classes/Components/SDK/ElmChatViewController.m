@@ -67,7 +67,7 @@
 }
 
 // The text input view sits on top of the keyboard
--(void) setupTextInputView {
+-(void) setupTextInputView: (BOOL) forceSuper {
     _sendBarView = [BChatSDK.ui sendBarView];
     [_sendBarView setSendBarDelegate:self];
     
@@ -277,7 +277,7 @@
     [_refreshControl addTarget:self action:@selector(tableRefreshed) forControlEvents:UIControlEventValueChanged];
     [tableView addSubview:_refreshControl];
     
-    [self setupTextInputView];
+    [self setupTextInputView: NO];
 
     [self registerMessageCells];
 
@@ -681,7 +681,7 @@
     __weak __typeof__(self) weakSelf = self;
 
     id<PElmMessage> message = [self messageForIndexPath:indexPath];
-    if (message.senderIsMe) {
+    if (message.senderIsMe && BChatSDK.config.messageDeletionEnabled) {
         UITableViewRowAction * button = [UITableViewRowAction rowActionWithStyle:UITableViewRowActionStyleDefault
                                                                            title:[NSBundle t:bDelete]
                                                                          handler:^(UITableViewRowAction *action, NSIndexPath *indexPath) {
@@ -747,7 +747,7 @@
     [UIView setAnimationDuration:duration.doubleValue];
     [UIView setAnimationCurve:curve.integerValue];
 
-    float contentOffsetY = tableView.contentOffset.y + keyboardBoundsConverted.size.height - self.safeAreaBottomInset;
+    CGFloat contentOffsetY = tableView.contentOffset.y + keyboardBoundsConverted.size.height - self.safeAreaBottomInset;
 
     [tableView setContentOffset:CGPointMake(0, contentOffsetY)];
 
@@ -792,7 +792,7 @@
     }
     [UIView setAnimationsEnabled:YES];
 
-    float contentOffsetY = tableView.contentOffset.y - keyboardBoundsConverted.size.height + self.safeAreaBottomInset;
+    CGFloat contentOffsetY = tableView.contentOffset.y - keyboardBoundsConverted.size.height + self.safeAreaBottomInset;
     [tableView setContentOffset:CGPointMake(0, contentOffsetY)];
 
     [self.view layoutIfNeeded];
